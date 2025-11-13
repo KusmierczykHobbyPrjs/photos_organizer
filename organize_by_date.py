@@ -70,7 +70,7 @@ def parse_args() -> argparse.Namespace:
         "--merge",
         action="store_false",
         required=False,
-        help="Merge consecutive days",
+        help="Merge consecutive days (default: true)",
     )
     parser.add_argument(
         "-c",
@@ -79,6 +79,13 @@ def parse_args() -> argparse.Namespace:
         default="mv",
         required=False,
         help="Command to execute for moving files (default: 'mv').",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        required=False,
+        help="Print more details",
     )
     
     args = parser.parse_args()
@@ -415,7 +422,8 @@ if __name__ == "__main__":
         for src, dst_file_name in files2dst_file_name.items():
             target_path = os.path.join(dir_path, dst_file_name)
             if src == target_path:
-                print(f"#{src} is already in the right directory!")
+                if args.verbose:
+                    print(f"#{src} is already in the right directory!")
             else:
                 print(f"{args.cmd} '{src}' '{target_path}'")  # Move file command
 
