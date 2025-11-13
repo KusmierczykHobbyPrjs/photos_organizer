@@ -68,6 +68,7 @@ def rename_files_in_directory(directory):
                     .replace("  ", " ")  # Remove double spaces
                     .strip()  # Remove trailing spaces
                 )
+
                 new_filename = new_filename.replace(
                     ".PDF", ".pdf"
                 )  # Ensure lowercase .pdf extension
@@ -90,7 +91,7 @@ def rename_files_in_directory(directory):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Rename files in a directory by moving dates to the beginning "
+        description="Rename files in a directory by moving dates in their names to beginning "
         "and replacing underscores with spaces."
     )
     parser.add_argument(
@@ -101,3 +102,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     rename_files_in_directory(args.directory)
+    
+
