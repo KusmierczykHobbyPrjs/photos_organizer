@@ -7,6 +7,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from collections import defaultdict
 
+
 def parse_args() -> argparse.Namespace:
     """
     Parses the command-line arguments required for the script.
@@ -87,7 +88,7 @@ def parse_args() -> argparse.Namespace:
         required=False,
         help="Print more details",
     )
-    
+
     args = parser.parse_args()
     args.target_directory = args.target_directory.rstrip("/")
     return args
@@ -110,7 +111,7 @@ def move_files(
     for file, meta in file2meta.items():
         date_dir = meta["date"]
         dst = date_dir
-        dst2files.setdefault(dst, []).append( file )
+        dst2files.setdefault(dst, []).append(file)
     return dst2files
 
 
@@ -189,20 +190,20 @@ def resolve_conflicts(files: List[str]) -> Dict[str, str]:
 def extract_common_prefix(file_names: List[str]) -> str:
     """
     Extracts the common directory prefix from a list of file paths.
-    
+
     This function finds the longest common directory path that is shared by all
     file paths in the input list. It respects directory boundaries and works with
     both absolute and relative paths, as well as mixed path separators.
-    
+
     Args:
         file_names: List of file paths (strings)
-        
+
     Returns:
         Common directory prefix as a string. Returns empty string if:
         - Input list is empty
         - No common prefix exists
         - Common prefix is not a complete directory
-        
+
     Examples:
         >>> extract_common_prefix([
         ...     "/home/user/documents/report.pdf",
@@ -210,14 +211,14 @@ def extract_common_prefix(file_names: List[str]) -> str:
         ...     "/home/user/documents/images/photo.jpg"
         ... ])
         '/home/user/documents'
-        
+
         >>> extract_common_prefix([
         ...     "project/src/main.py",
         ...     "project/src/utils.py",
         ...     "project/tests/test_main.py"
         ... ])
         'project'
-        
+
         >>> extract_common_prefix([
         ...     "/var/log/app.log",
         ...     "/home/user/data.txt"
@@ -226,43 +227,43 @@ def extract_common_prefix(file_names: List[str]) -> str:
     """
     if not file_names:
         return ""
-    
+
     if len(file_names) == 1:
         # Single file: return its directory
         return str(Path(file_names[0]).parent)
-    
+
     # Normalize all paths to use consistent separators
     normalized_paths = [Path(f) for f in file_names]
-    
+
     # Convert to parts for comparison
     path_parts = [list(p.parts) for p in normalized_paths]
-    
+
     # Find common prefix by comparing parts
     common_parts = []
-    
+
     # Get minimum length to avoid index errors
     min_length = min(len(parts) for parts in path_parts)
-    
+
     for i in range(min_length):
         # Check if all paths have the same part at position i
         first_part = path_parts[0][i]
-        
+
         if all(parts[i] == first_part for parts in path_parts):
             common_parts.append(first_part)
         else:
             break
-    
+
     # Don't include the filename itself in the prefix
     # Check if the common parts include a filename by verifying
     # if any path has exactly len(common_parts) parts
     if common_parts and any(len(parts) == len(common_parts) for parts in path_parts):
         # The last common part is a filename, not a directory
         common_parts = common_parts[:-1]
-    
+
     # Construct the result path
     if not common_parts:
         return ""
-    
+
     # Handle absolute vs relative paths
     if normalized_paths[0].is_absolute():
         # For absolute paths, join parts with root
@@ -270,25 +271,27 @@ def extract_common_prefix(file_names: List[str]) -> str:
     else:
         # For relative paths
         result = Path(*common_parts)
-    
+
     return str(result)
 
 
-def merge_consecutive_date_clusters(date_files: Dict[str, List[str]]) -> Dict[str, List[str]]:
+def merge_consecutive_date_clusters(
+    date_files: Dict[str, List[str]],
+) -> Dict[str, List[str]]:
     """
     Merges file lists from consecutive days into clusters.
-    
+
     Takes a mapping of date strings (YYYY-MM-DD) to file lists and groups files
     from consecutive days together. Each cluster gets a new key in the format:
     - "YYYY-MM-DD - YYYY-MM-DD" for multi-day clusters
     - "YYYY-MM-DD" for single-day clusters
-    
+
     Args:
         date_files: Dictionary mapping date strings to lists of files
-        
+
     Returns:
         Dictionary with merged consecutive date ranges and combined file lists
-        
+
     Examples:
         >>> data = {
         ...     "2024-01-01": ["file1.txt", "file2.txt"],
@@ -305,7 +308,7 @@ def merge_consecutive_date_clusters(date_files: Dict[str, List[str]]) -> Dict[st
     """
     if not date_files:
         return {}
-    
+
     # Parse and sort dates
     date_list = []
     for date_str in date_files.keys():
@@ -315,21 +318,21 @@ def merge_consecutive_date_clusters(date_files: Dict[str, List[str]]) -> Dict[st
         except ValueError:
             # Skip invalid date formats
             continue
-    
+
     if not date_list:
         return {}
-    
+
     # Sort by date
     date_list.sort(key=lambda x: x[0])
-    
+
     # Find consecutive date clusters
     clusters = []
     current_cluster = [date_list[0]]
-    
+
     for i in range(1, len(date_list)):
         prev_date, _ = date_list[i - 1]
         curr_date, _ = date_list[i]
-        
+
         # Check if current date is exactly one day after previous
         if curr_date - prev_date == timedelta(days=1):
             current_cluster.append(date_list[i])
@@ -337,19 +340,19 @@ def merge_consecutive_date_clusters(date_files: Dict[str, List[str]]) -> Dict[st
             # Gap found, save current cluster and start new one
             clusters.append(current_cluster)
             current_cluster = [date_list[i]]
-    
+
     # Don't forget the last cluster
     clusters.append(current_cluster)
-    
+
     # Build result dictionary
     result = {}
-    
+
     for cluster in clusters:
         # Get all files from this cluster
         all_files = []
         for date_obj, date_str in cluster:
             all_files.extend(date_files[date_str])
-        
+
         # Create key based on cluster size
         if len(cluster) == 1:
             # Single day - use original format
@@ -360,9 +363,9 @@ def merge_consecutive_date_clusters(date_files: Dict[str, List[str]]) -> Dict[st
             _, start_date = cluster[0]
             _, end_date = cluster[-1]
             key = f"{start_date} - {end_date}"
-        
+
         result[key] = all_files
-    
+
     return result
 
 
@@ -377,7 +380,7 @@ if __name__ == "__main__":
     if not file_names:
         print("No files found matching the provided patterns.")
         exit(1)
-        
+
     if args.target_directory == "":
         try:
             args.target_directory = extract_common_prefix(file_names)
@@ -390,30 +393,30 @@ if __name__ == "__main__":
         file_names
     )  # Extract metadata, including date, for each file
     dst2files = move_files(file2meta, args)  # Group files by date
-    
+
     try:
         dst2files = merge_small_directories(
             dst2files, args
         )  # Merge directories with fewer than min_n_files
     except Exception as e:
-       print(f"# ERROR: Failed to merge directories with fewer than min_n_files: {e}")
-    
+        print(f"# ERROR: Failed to merge directories with fewer than min_n_files: {e}")
+
     try:
         dst2files = merge_consecutive_date_clusters(dst2files)
     except Exception as e:
-       print(f"# ERROR: Failed to merge consecutive days: {e}")
-       
+        print(f"# ERROR: Failed to merge consecutive days: {e}")
+
     dst2files = {
         dst: sorted(files) for dst, files in dst2files.items()
     }  # Sort files in each directory
 
     # Generate bash commands for creating directories and moving files
     for dir_path, files in sorted(dst2files.items()):
-    
+
         dir_path = os.path.join(
             args.target_directory, f"{args.prefix}{dir_path}{args.suffix}"
         )
-    
+
         print(f"mkdir -p '{dir_path}'")  # Create directory command
 
         # Resolve conflicts in file names before moving
