@@ -62,7 +62,7 @@ This Python script is designed to detect duplicate files between two sets of fil
 
 Run the script using the following command:
 
-```python detect_duplicates.py -l "left_dir/*.jpg" -r "right_dir/*.jpg" ```
+```python detect_duplicates.py -f "left_dir/*.jpg" -r "right_dir/*.jpg" ```
 
 --------------------------------------------------
 ## **LEGACY**: [date_to_front.py](date_to_front.py): Moving Date to Filename Front
