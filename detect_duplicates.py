@@ -20,8 +20,8 @@ def parse_args():
     )
 
     parser.add_argument(
-        "-l",
-        "--left_files",
+        "-f",
+        "--files",
         type=str,
         nargs="+",
         required=True,
@@ -45,7 +45,9 @@ def parse_args():
         help="Command to apply to duplicate files (default is 'rm -rf').",
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.left_files = args.files
+    return args
 
 
 _stats_cache = {}
