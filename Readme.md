@@ -2,9 +2,9 @@
 Scripts for organizing files (e.g., photos) by their date. For example, they can be used when creating a disk copy of photos from a phone.
 
 Scripts:
- - `rename_by_date.py` — renames files so that their names begin with the date (YYYY-MM-DD)
- - `organize_by_date.py` — groups files into directories based on their dates
- - `detect_duplicates` — detects duplicate files
+ - [rename_by_date.py](rename_by_date.py) — renames files so that their names begin with the date (YYYY-MM-DD)
+ - [organize_by_date.py](organize_by_date.py) — groups files into directories based on their dates
+ - [detect_duplicates.py](detect_duplicates.py) — detects duplicate files
 
 
 # Usage
@@ -13,8 +13,8 @@ The Python scripts do not perform the modifications directly. Instead, they prin
 
 # Details of the scripts 
 
-===============================================================================
-## `rename_by_date.py`: File Renaming Based on Date
+--------------------------------------------------
+## [rename_by_date.py](rename_by_date.py): File Renaming Based on Date
 
 This Python script generates bash commands for renaming files (e.g., JPEG images) based on their date. It scans the provided files, extracts the date from their name or metadata, and constructs new filenames in the format `date+suffix`. The script resolves naming conflicts (e.g., duplicate filenames) and outputs the corresponding shell commands (such as `mv` or another user-specified command).
 
@@ -24,8 +24,8 @@ To run the script, use the following command:
 
 ```python rename_by_date.py -f /path/to/files/*.jpg```
 
-===============================================================================
-## `organize_by_date.py`: File Grouping by Date
+--------------------------------------------------
+## [organize_by_date.py](organize_by_date.py): File Grouping by Date
 
 This Python script groups files (such as images) into directories based on their date metadata. It outputs bash commands to move the files into their respective directories, with options for adding directory prefixes or suffixes, resolving naming conflicts, and merging small directories into a common folder.
 
@@ -46,8 +46,8 @@ You can run the script using the following command:
 or
 ```python organize_by_date.py -f "/path/to/files/*.jpg" -d "/path/to/target" -p "prefix_" -s "_suffix" -n 5```
 
-===============================================================================
-## `detect_duplicates.py`: Detecting Duplicates
+--------------------------------------------------
+## [detect_duplicates.py](detect_duplicates.py): Detecting Duplicates
 
 This Python script is designed to detect duplicate files between two sets of files by comparing their contents. It outputs bash commands (such as `rm -rf` by default) for handling the detected duplicates. The script efficiently compares files based on their size and byte content to ensure accuracy, even when filenames are different.
 
@@ -64,8 +64,8 @@ Run the script using the following command:
 
 ```python detect_duplicates.py -l "left_dir/*.jpg" -r "right_dir/*.jpg" ```
 
-===============================================================================
-## **LEGACY**: `date_to_front.py`: Moving Date to Filename Front
+--------------------------------------------------
+## **LEGACY**: [date_to_front.py](date_to_front.py): Moving Date to Filename Front
 
 This Python script renames files in a specified directory by extracting date patterns from the filenames and reformatting the filenames. It searches for dates in the following formats:
 
