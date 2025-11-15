@@ -1,0 +1,3 @@
+ - preserve separators in file_date.py -> extract_date_from_string
+ - add resurisive processing of folders
+ - see if they do the same as rename_by_date.py and remove date_to_front.py and add_modification_date_prefix.py
