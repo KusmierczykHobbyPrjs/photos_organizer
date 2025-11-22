@@ -90,7 +90,7 @@ def parse_args() -> argparse.Namespace:
     )
 
     args = parser.parse_args()
-    args.target_directory = args.target_directory.rstrip("/")
+    args.target_directory = args.target_directory.rstrip(os.path.sep)
     return args
 
 
