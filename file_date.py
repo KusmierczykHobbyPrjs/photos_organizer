@@ -4,24 +4,6 @@ from typing import Dict, List, Tuple, Optional
 from datetime import datetime
 
 
-def validate_if_starts_with_date(text: str, fmt: str = "%Y-%m-%d") -> bool:
-    """
-    Validates if the given string starts with a valid date in the format provided.
-
-    Args:
-        text (str): The string to validate.
-        fmt (str): The date format to check against (default: "%Y-%m-%d").
-
-    Returns:
-        bool: True if the beginning of the string matches the date format, False otherwise.
-    """
-    try:
-        datetime.strptime(text, fmt)
-        return True
-    except ValueError:
-        return False
-
-
 def _extract_timestamp_as_date(full_path: str) -> str:
     """
     Extracts the file's modification time and converts it to a date string (YYYY-MM-DD).
@@ -178,6 +160,31 @@ def _is_valid_date(year: int, month: int, day: int) -> bool:
         return False
 
 
+def _is_valid_date_string(text: str, fmt: str = "%Y-%m-%d") -> bool:
+    """
+    Validates if the given string starts with a valid date in the format provided.
+
+    Args:
+        text (str): The string to validate.
+        fmt (str): The date format to check against (default: "%Y-%m-%d").
+
+    Returns:
+        bool: True if the beginning of the string matches the date format, False otherwise.
+    """
+    try:
+        d = datetime.strptime(text, fmt)
+        return (
+            d.year >= 1900
+            and d.year <= 2100
+            and d.month >= 1
+            and d.month <= 12
+            and d.day >= 1
+            and d.day <= 31
+        )  # Basic range checks
+    except ValueError:
+        return False
+
+
 def extract_date_from_filename(full_path: str) -> Tuple[str, str]:
     """
     Attempts to extract the date from the filename. If unsuccessful, extracts the date
@@ -203,18 +210,18 @@ def extract_date_from_filename(full_path: str) -> Tuple[str, str]:
         suffix = filename[8:]
 
         # Validate the date format
-        if not validate_if_starts_with_date(date):
+        if not _is_valid_date_string(date):
             date = _extract_timestamp_as_date(full_path)
 
     # Files that start with 'signal-' followed by a date
-    elif filename.startswith("signal-") and validate_if_starts_with_date(
+    elif filename.startswith("signal-") and _is_valid_date_string(
         filename[7:17]
     ):
         date = filename[7:17]  # Extract the date from the filename
         suffix = filename[17:]
 
     # General case where the filename starts with a date
-    elif validate_if_starts_with_date(filename[:10]):
+    elif len(filename)>=10 and _is_valid_date_string(filename[:10]):
         date = filename[:10]  # Extract the date from the first 10 characters
         suffix = filename[10:]
 
