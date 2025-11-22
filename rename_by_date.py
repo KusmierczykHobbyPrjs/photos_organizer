@@ -4,6 +4,8 @@ from typing import Dict, List, Tuple
 import file_date
 import os
 
+from path_matcher import match_paths
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -23,10 +25,10 @@ def parse_args():
     )
     # Support drag-and-drop file input
     parser.add_argument(
-        'dropped_files', 
-        nargs='*',      # Accepts zero or more files
-        default=[],     # Default to empty list
-        help='List of files (drag and drop)'
+        "dropped_files",
+        nargs="*",  # Accepts zero or more files
+        default=[],  # Default to empty list
+        help="List of files (drag and drop)",
     )
 
     parser.add_argument(
@@ -54,8 +56,15 @@ def parse_args():
         required=False,
         help="command executed for individual files",
     )
+    parser.add_argument(
+        "-i",
+        "--include_directories",
+        action="store_true",
+        help="include directories",
+        default=False,
+    )
     args = parser.parse_args()
-    
+
     args.files = list(set(args.files + args.dropped_files))
 
     return args
@@ -117,18 +126,10 @@ if __name__ == "__main__":
 
     args = parse_args()
 
-    ###########################################################################
+    file_names = match_paths(args.files, recursive=True, verbose=False)
 
-    # use glob to find files matching wildcards
-    # if a string does not contain a wildcard, glob will return it as is.
-    file_names = []
-    for arg in args.files:
-        file_names += glob(arg)
-
-    ###########################################################################
-
-    # Modify first the longest paths to avoid conflicts
-    file_names = sorted(file_names, key=lambda x: -len(x))
+    if not args.include_directories:
+        file_names = [f for f in file_names if os.path.isfile(f)]
 
     print("# Renaming files to date+suffix:")
     file2meta = file_date.extract_meta(file_names)

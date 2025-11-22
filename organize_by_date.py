@@ -7,6 +7,8 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from collections import defaultdict
 
+from path_matcher import match_paths
+
 
 def parse_args() -> argparse.Namespace:
     """
@@ -385,9 +387,7 @@ if __name__ == "__main__":
     args = parse_args()
 
     # Find files using glob (wildcards supported)
-    file_names = []
-    for pattern in args.files:
-        file_names += glob(pattern)
+    file_names = match_paths(args.files, recursive=True, verbose=False)
 
     if not file_names:
         print("No files found matching the provided patterns.")

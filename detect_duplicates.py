@@ -3,6 +3,8 @@ from glob import glob
 from typing import Dict, List
 import os
 
+from path_matcher import match_paths
+
 
 def parse_args():
     """
@@ -154,13 +156,13 @@ if __name__ == "__main__":
     args = parse_args()
 
     # Gather left files using glob for wildcards
-    left_files = [file for pattern in args.left_files for file in glob(pattern)]
+    left_files = match_paths(args.left_files, recursive=True, verbose=False)
     print(f"# Considering {len(left_files)} (left) files")
 
     # Gather right files or reuse left files if not specified
     right_files = []
     if args.right_files:
-        right_files = [file for pattern in args.right_files for file in glob(pattern)]
+        right_files = match_paths(args.right_files, recursive=True, verbose=False)
         print(f"# Considering {len(right_files)} (right) files")
     else:
         right_files = left_files.copy()

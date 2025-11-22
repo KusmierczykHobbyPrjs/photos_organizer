@@ -6,6 +6,8 @@ import file_date
 import argparse
 from glob import glob
 
+from path_matcher import match_paths
+
 
 def parse_args() -> argparse.Namespace:
     """
@@ -176,16 +178,10 @@ def extract_date_for_directory(
 if __name__ == "__main__":
     args = parse_args()
 
-    # Find files using glob (wildcards supported)
-    paths = []
-    for pattern in args.files:
-        paths += glob(pattern)
+    paths = match_paths(args.files, recursive=True, verbose=False)
 
     # Keep only directories
     paths = [p for p in paths if os.path.isdir(p)]
-
-    # Modify first the longest paths to avoid conflicts
-    paths = sorted(paths, key=lambda x: -len(x))
 
     if not paths:
         print("# No directories found matching the provided patterns.")
@@ -197,7 +193,7 @@ if __name__ == "__main__":
                 dir_path, args.verbose, args.quantiles
             )
             parent_dir = os.path.dirname(dir_path)
-            new_dir_name = f"{date_str} {dir_name}"
+            new_dir_name = f"{date_str} {dir_name}".strip()
             new_dir_path = os.path.join(parent_dir, new_dir_name)
 
             if dir_path != new_dir_path:
