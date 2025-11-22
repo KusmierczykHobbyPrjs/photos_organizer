@@ -2,7 +2,7 @@ from glob import glob
 import os
 
 
-def match_paths(patterns, recursive=True, verbose=False):
+def match_paths(patterns, recursive=True, verbose=False, sort=True):
     # Expand wildcards to get all matching files
     file_paths = []
     for pattern in patterns:
@@ -18,4 +18,9 @@ def match_paths(patterns, recursive=True, verbose=False):
         else:
             # If glob returns nothing, the pattern might be a literal filename
             file_paths.append(pattern)
+
+    if sort:
+        # Modify first the longest paths to avoid conflicts
+        file_paths = sorted(file_paths, key=lambda x: -len(x))
+
     return file_paths
