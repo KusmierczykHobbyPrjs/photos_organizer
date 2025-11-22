@@ -3,6 +3,28 @@ import re
 from typing import Dict, List, Tuple, Optional
 from datetime import datetime
 
+import time
+
+try:
+    import exifread
+except ImportError:
+    print("# Exifread module not found. Please install it using 'pip install exifread'")
+
+
+def get_exif_timestamp(path):
+    # Open image file for reading (binary mode)
+    try:
+        f = open(path, "rb")
+    except:
+        return None
+    # Return Exif tags
+    tags = exifread.process_file(f)
+    f.close()
+    if "Image DateTime" not in tags:
+        return None
+    t = str(tags["Image DateTime"])
+    return time.mktime(datetime.strptime(t, "%Y:%m:%d %H:%M:%S").timetuple())
+
 
 def _extract_timestamp_as_date(full_path: str) -> str:
     """
@@ -268,13 +290,26 @@ def extract_date_for_path(full_path: str, verbose: bool = False, modification_ti
 
     else:
         try:
+            # print(f"#Regex date for {full_path}: {filename}")
             date, suffix = extract_date_from_filename_re(filename)
         except:
-            try:
-                date, suffix = extract_date_from_string(filename)
-            except:
-                date, suffix = None, filename
-            
+            date, suffix = None, filename
+        
+        try:
+            # print(f"#Parsing date for {full_path}: {filename}")
+            date, suffix = extract_date_from_string(filename)
+        except:
+            date, suffix = None, filename
+
+        try:
+            date_exif = get_exif_timestamp(full_path)
+            if date_exif is not None:
+                date = datetime.fromtimestamp(date_exif).strftime("%Y-%m-%d")
+                suffix = filename
+        except Exception as e:
+            # print(f"# Exif date extraction failed for {full_path}: {e}")
+            date, suffix = None, filename
+
         if date is None and modification_time_fallback:
             try:
                 # Fallback: Use file's modification time if no date can be parsed from filename
@@ -283,8 +318,9 @@ def extract_date_for_path(full_path: str, verbose: bool = False, modification_ti
             except Exception as e:
                 if verbose:
                     print(f"# Failed to parse {full_path} -> {filename}: {e}")
-                date, suffix = "", filename
+                date, suffix = None, filename
 
+    date = date or ""
     return date, suffix
 
 

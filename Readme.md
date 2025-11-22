@@ -6,6 +6,7 @@ Scripts:
  - [organize_by_date.py](organize_by_date.py) — groups files into directories based on their dates
  - [detect_duplicates.py](detect_duplicates.py) — detects duplicate files
  - [rename_dirs_by_date.py](rename_dirs_by_date.py) - renames directories based on ranges of contained files
+ - [annotate.py](annotate.py) - Stamps images with dates and captions
 
 
 # Usage
@@ -73,3 +74,13 @@ Run the script using the following command:
 Run the script using the following command:
 
 ```python rename_dirs_by_date.py -f "paths_to_be_searched" ```
+
+
+--------------------------------------------------
+## [annotate.py](annotate.py): Stamps images with dates and captions
+
+### Usage
+
+Run the script using the following command:
+
+```python annotate.py -f "paths_to_be_searched" ```
