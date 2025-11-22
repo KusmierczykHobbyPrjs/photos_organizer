@@ -5,6 +5,7 @@ Scripts:
  - [rename_by_date.py](rename_by_date.py) — renames files so that their names begin with the date (YYYY-MM-DD)
  - [organize_by_date.py](organize_by_date.py) — groups files into directories based on their dates
  - [detect_duplicates.py](detect_duplicates.py) — detects duplicate files
+ - [rename_dirs_by_date.py](rename_dirs_by_date.py) - renames directories based on ranges of contained files
 
 
 # Usage
@@ -63,3 +64,12 @@ This Python script is designed to detect duplicate files between two sets of fil
 Run the script using the following command:
 
 ```python detect_duplicates.py -f "left_dir/*.jpg" -r "right_dir/*.jpg" ```
+
+--------------------------------------------------
+## [rename_dirs_by_date.py](rename_dirs_by_date.py): Naming directories based on dates of contained files
+
+### Usage
+
+Run the script using the following command:
+
+```python rename_dirs_by_date.py -f "paths_to_be_searched" ```
