@@ -115,6 +115,9 @@ if __name__ == "__main__":
 
     ###########################################################################
 
+    # Modify first the longest paths to avoid conflicts
+    file_names = sorted(file_names, key=lambda x: -len(x))
+
     print("# Renaming files to date+suffix:")
     file2meta = file_date.extract_meta(file_names)
 
