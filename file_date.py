@@ -142,14 +142,20 @@ def _try_parse_six_digit(s: str) -> Optional[str]:
     return None
 
 
-def _is_valid_date(year: int, month: int, day: int) -> bool:
-    """Check if the given year, month, day form a valid date."""
+def _valid_date_ranges(year: int, month: int, day: int) -> bool:
     # Basic range checks
-    if year < 1900 or year > 2100:
+    if year < 1900 or year > 2050:
         return False
     if month < 1 or month > 12:
         return False
     if day < 1 or day > 31:
+        return False
+    return True
+
+
+def _is_valid_date(year: int, month: int, day: int) -> bool:
+    """Check if the given year, month, day form a valid date."""
+    if not _valid_date_ranges(year, month, day):
         return False
 
     # Use datetime to validate the actual date
@@ -173,14 +179,7 @@ def _is_valid_date_string(text: str, fmt: str = "%Y-%m-%d") -> bool:
     """
     try:
         d = datetime.strptime(text, fmt)
-        return (
-            d.year >= 1900
-            and d.year <= 2100
-            and d.month >= 1
-            and d.month <= 12
-            and d.day >= 1
-            and d.day <= 31
-        )  # Basic range checks
+        return _valid_date_ranges(d.year, d.month, d.day)
     except ValueError:
         return False
 
@@ -213,6 +212,9 @@ def extract_date_from_filename_re(filename: str) -> Tuple[str, str]:
         ):  # Convert YYYY_MM_DD to YYYY-MM-DD
             date_str = date_str.replace("_", "-")
 
+        if not _is_valid_date_string(date_str):
+            return None, filename
+
         # Create the new filename
         remaining_str = filename.replace(
             match.group(1), ""
@@ -223,7 +225,7 @@ def extract_date_from_filename_re(filename: str) -> Tuple[str, str]:
     return None, filename
 
 
-def extract_date_for_filename(full_path: str) -> Tuple[str, str]:
+def extract_date_for_path(full_path: str, verbose: bool = False, modification_time_fallback: bool = True) -> Tuple[str, str]:
     """
     Attempts to extract the date from the filename. If unsuccessful, extracts the date
     from the file's modification timestamp.
@@ -236,6 +238,7 @@ def extract_date_for_filename(full_path: str) -> Tuple[str, str]:
                          and the remaining part of the filename (suffix).
     """
     filename = os.path.basename(full_path)
+    date, suffix = None, filename
 
     # Patterns like IMG_YYYYMMDD or VID_YYYYMMDD
     if (
@@ -267,18 +270,19 @@ def extract_date_for_filename(full_path: str) -> Tuple[str, str]:
         try:
             date, suffix = extract_date_from_filename_re(filename)
         except:
-            date, suffix = None, filename
-
-        if date is None:
-            date, suffix = extract_date_from_string(filename)
-
-        if date is None:
+            try:
+                date, suffix = extract_date_from_string(filename)
+            except:
+                date, suffix = None, filename
+            
+        if date is None and modification_time_fallback:
             try:
                 # Fallback: Use file's modification time if no date can be parsed from filename
                 date = _extract_timestamp_as_date(full_path)
                 suffix = filename
-            except:
-                print(f"# Failed to parse {full_path} -> {filename}")
+            except Exception as e:
+                if verbose:
+                    print(f"# Failed to parse {full_path} -> {filename}: {e}")
                 date, suffix = "", filename
 
     return date, suffix
@@ -302,7 +306,7 @@ def extract_meta(paths: List[str]) -> Dict[str, Dict[str, str]]:
     for full_path in paths:
         filename = os.path.basename(full_path)
         dirname = os.path.dirname(full_path)
-        date, suffix = extract_date_for_filename(full_path)
+        date, suffix = extract_date_for_path(full_path, verbose=True)
 
         path2meta[full_path] = {
             "dirname": dirname,
