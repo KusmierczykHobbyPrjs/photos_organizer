@@ -16,10 +16,19 @@ def parse_args():
         "-f",
         "--files",
         type=str,
-        nargs="+",
-        required=True,
+        nargs="*",
+        required=False,
+        default=[],
         help="list of files in a directory",
     )
+    # Support drag-and-drop file input
+    parser.add_argument(
+        'dropped_files', 
+        nargs='*',      # Accepts zero or more files
+        default=[],     # Default to empty list
+        help='List of files (drag and drop)'
+    )
+
     parser.add_argument(
         "-d",
         "--target_directory",
@@ -46,6 +55,9 @@ def parse_args():
         help="command executed for individual files",
     )
     args = parser.parse_args()
+    
+    args.files = list(set(args.files + args.dropped_files))
+
     return args
 
 

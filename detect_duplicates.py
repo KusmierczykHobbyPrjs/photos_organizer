@@ -23,10 +23,20 @@ def parse_args():
         "-f",
         "--files",
         type=str,
-        nargs="+",
-        required=True,
+        nargs="*",
+        required=False,
+        default=[],
         help="List of file paths or patterns to compare (wildcards supported).",
     )
+    # Support drag-and-drop file input
+        # Support drag-and-drop file input
+    parser.add_argument(
+        'dropped_files', 
+        nargs='*',      # Accepts zero or more files
+        default=[],     # Default to empty list
+        help='List of files (drag and drop)'
+    )
+
     parser.add_argument(
         "-r",
         "--right_files",
@@ -46,7 +56,10 @@ def parse_args():
     )
 
     args = parser.parse_args()
+    
+    args.files = list(set(args.files + args.dropped_files))
     args.left_files = args.files
+    
     return args
 
 

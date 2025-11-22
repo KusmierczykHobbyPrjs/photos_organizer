@@ -30,10 +30,19 @@ def parse_args() -> argparse.Namespace:
         "-f",
         "--files",
         type=str,
-        nargs="+",
-        required=True,
+        nargs="*",
+        required=False,
+        default=[],
         help="List of file paths or patterns to process (wildcards supported).",
     )
+    # Support drag-and-drop file input
+    parser.add_argument(
+        'dropped_files', 
+        nargs='*',      # Accepts zero or more files
+        default=[],     # Default to empty list
+        help='List of files (drag and drop)'
+    )
+
     parser.add_argument(
         "-d",
         "--target_directory",
@@ -90,7 +99,10 @@ def parse_args() -> argparse.Namespace:
     )
 
     args = parser.parse_args()
+
     args.target_directory = args.target_directory.rstrip(os.path.sep)
+    args.files = list(set(args.files + args.dropped_files))
+
     return args
 
 

@@ -170,9 +170,17 @@ def parse_args():
         "-f",
         "--files",
         type=str,
-        nargs="+",
-        required=True,
+        nargs="*",
+        required=False,
+        default=[],
         help="List of files or wildcard patterns (e.g., *.jpg dir/**/*.png)",
+    )
+    # Support drag-and-drop file input
+    parser.add_argument(
+        'dropped_files', 
+        nargs='*',      # Accepts zero or more files
+        default=[],     # Default to empty list
+        help='List of files (drag and drop)'
     )
 
     parser.add_argument(
@@ -262,6 +270,8 @@ def parse_args():
 
     if not args.date and not args.dirname:
         raise ValueError("If no date is requested, dirname must be enabled!")
+    
+    args.files = list(set(args.files + args.dropped_files))
 
     return args
 

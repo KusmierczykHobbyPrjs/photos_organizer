@@ -23,10 +23,19 @@ def parse_args() -> argparse.Namespace:
         "-f",
         "--files",
         type=str,
-        nargs="+",
-        required=True,
+        nargs="*",
+        required=False,
+        default=[],
         help="List of directory paths or patterns to process (wildcards supported).",
     )
+    # Support drag-and-drop file input
+    parser.add_argument(
+        'dropped_files', 
+        nargs='*',      # Accepts zero or more files
+        default=[],     # Default to empty list
+        help='List of files (drag and drop)'
+    )
+
     parser.add_argument(
         "-q",
         "--quantiles",
@@ -46,6 +55,8 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
 
     assert len(args.quantiles) == 3, "3 quantiles required: low, medium, high"
+    args.files = list(set(args.files + args.dropped_files))
+
     return args
 
 
@@ -177,7 +188,7 @@ if __name__ == "__main__":
     paths = sorted(paths, key=lambda x: -len(x))
 
     if not paths:
-        print("No directories found matching the provided patterns.")
+        print("# No directories found matching the provided patterns.")
         exit(1)
 
     for dir_path in paths:
