@@ -5,3 +5,4 @@
  - for rename_dirs_by_date 
  - support "." as date separator
  - fix regular expressions for detecting dates so it would require some differnt character or beginning/end of string before and after date
+ - use path matcher for all scripts in the same way as it is used for annotate.py
