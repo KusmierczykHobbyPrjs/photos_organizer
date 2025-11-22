@@ -185,6 +185,44 @@ def _is_valid_date_string(text: str, fmt: str = "%Y-%m-%d") -> bool:
         return False
 
 
+def extract_date_from_filename_re(filename: str) -> Tuple[str, str]:
+
+    # Regular expressions to match different date formats
+    date_patterns = [
+        re.compile(r"(\d{4}-\d{2}-\d{2})"),  # Match YYYY-MM-DD
+        re.compile(r"(\d{4}_\d{2}_\d{2})"),  # Match YYYY_MM_DD
+        re.compile(r"(\d{8})"),  # Match YYYYMMDD
+    ]
+
+    
+    # Search for a date in the filename
+    match = None
+    for date_pattern in date_patterns:
+        match = date_pattern.search(filename)
+        if match:
+            break
+
+    if match:
+        date_str = match.group(1)
+
+        # Format date to YYYY-MM-DD if not already
+        if re.match(r"\d{8}", date_str):  # Convert YYYYMMDD to YYYY-MM-DD
+            date_str = datetime.strptime(date_str, "%Y%m%d").strftime("%Y-%m-%d")
+        elif re.match(
+            r"\d{4}_\d{2}_\d{2}", date_str
+        ):  # Convert YYYY_MM_DD to YYYY-MM-DD
+            date_str = date_str.replace("_", "-")
+
+        # Create the new filename
+        remaining_str = filename.replace(
+            match.group(1), ""
+        ).strip()  # Remove matched date  # Remove trailing spaces
+
+        return date_str, remaining_str
+
+    return None, filename
+
+
 def extract_date_from_filename(full_path: str) -> Tuple[str, str]:
     """
     Attempts to extract the date from the filename. If unsuccessful, extracts the date
@@ -226,7 +264,14 @@ def extract_date_from_filename(full_path: str) -> Tuple[str, str]:
         suffix = filename[10:]
 
     else:
-        date, suffix = extract_date_from_string(filename)
+        try:
+            date, suffix = extract_date_from_filename_re(filename)
+        except:
+            date, suffix = None, filename
+
+        if date is None:
+            date, suffix = extract_date_from_string(filename)
+
         if date is None:
             try:
                 # Fallback: Use file's modification time if no date can be parsed from filename

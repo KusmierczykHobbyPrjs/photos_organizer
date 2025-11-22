@@ -63,19 +63,3 @@ This Python script is designed to detect duplicate files between two sets of fil
 Run the script using the following command:
 
 ```python detect_duplicates.py -f "left_dir/*.jpg" -r "right_dir/*.jpg" ```
-
---------------------------------------------------
-## **LEGACY**: [date_to_front.py](date_to_front.py): Moving Date to Filename Front
-
-This Python script renames files in a specified directory by extracting date patterns from the filenames and reformatting the filenames. It searches for dates in the following formats:
-
-- `YYYY-MM-DD`
-- `YYYY_MM_DD`
-- `YYYYMMDD`
-
-The script moves the detected date to the beginning of the filename and replaces underscores (`_`) with spaces.
-
-### Usage
-
-To use the script, run the following command in your terminal:
-```python date_to_front.py /path/to/directory```
