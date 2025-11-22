@@ -296,13 +296,13 @@ def extract_date_for_path(full_path: str, verbose: bool = False, modification_ti
             date, suffix = None, filename
         
         try:
-            # print(f"#Parsing date for {full_path}: {filename}")
-            date, suffix = extract_date_from_string(filename)
+            # print(f"#Parsing date for {full_path}: {full_path}")
+            date, suffix = extract_date_from_string(full_path)
         except:
             date, suffix = None, filename
 
         try:
-            date_exif = get_exif_timestamp(full_path)
+            date_exif = get_exif_timestamp(full_path, verbose=False)
             if date_exif is not None:
                 date = datetime.fromtimestamp(date_exif).strftime("%Y-%m-%d")
                 suffix = filename
