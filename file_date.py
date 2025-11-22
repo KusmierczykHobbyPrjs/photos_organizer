@@ -223,7 +223,7 @@ def extract_date_from_filename_re(filename: str) -> Tuple[str, str]:
     return None, filename
 
 
-def extract_date_from_filename(full_path: str) -> Tuple[str, str]:
+def extract_date_for_filename(full_path: str) -> Tuple[str, str]:
     """
     Attempts to extract the date from the filename. If unsuccessful, extracts the date
     from the file's modification timestamp.
@@ -302,7 +302,7 @@ def extract_meta(paths: List[str]) -> Dict[str, Dict[str, str]]:
     for full_path in paths:
         filename = os.path.basename(full_path)
         dirname = os.path.dirname(full_path)
-        date, suffix = extract_date_from_filename(full_path)
+        date, suffix = extract_date_for_filename(full_path)
 
         path2meta[full_path] = {
             "dirname": dirname,
