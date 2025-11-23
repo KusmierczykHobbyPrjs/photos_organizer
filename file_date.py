@@ -169,9 +169,11 @@ def extract_date_from_filename_re(filename: str) -> Tuple[Optional[str], str]:
         (rf'{boundary}{year}{boundary_end}', 'Y', ['year']),
     ]
     
+    debug(f"#Extracting date from filename: {filename}")
     for pattern, format_type, components in date_patterns:
         match = re.search(pattern, filename)
         if match:
+            debug(f"#Matched pattern: {pattern} in filename: {filename}")
             # Extract the full matched string (including boundary context)
             full_match = match.group(0)
             
@@ -186,6 +188,7 @@ def extract_date_from_filename_re(filename: str) -> Tuple[Optional[str], str]:
                 date_parts[comp] = groups[group_idx]
                 group_idx += 1
             
+            debug(f"#Extracted date parts: {date_parts}")
             # Validate date components
             try:
                 year_val = int(date_parts['year'])
@@ -219,14 +222,24 @@ def extract_date_from_filename_re(filename: str) -> Tuple[Optional[str], str]:
                 date_str = f"{date_parts['year']}-{month_str}"
             else:  # Y
                 date_str = date_parts['year']
+            debug(f"#Normalized date string: {date_str}")
             
             # Find the actual date portion (without boundary characters)
-            # by matching just the digits and separators
-            date_only_pattern = rf'{year}{sep}{month}{sep}{day}' if 'day' in date_parts else \
-                                rf'{year}{sep}{month}' if 'month' in date_parts else \
-                                year
+            # by matching just the digits and separators in the correct order
+            if format_type == 'YMD':
+                date_only_pattern = rf'{year}{sep}{month}{sep}{day}'
+            elif format_type == 'DMY':
+                date_only_pattern = rf'{day}{sep}{month}{sep}{year}'
+            elif format_type == 'MDY':
+                date_only_pattern = rf'{month}{sep}{day}{sep}{year}'
+            elif format_type == 'YM':
+                date_only_pattern = rf'{year}{sep}{month}'
+            else:  # Y
+                date_only_pattern = year
+            debug(f"#Date only pattern: {date_only_pattern}")
             
             date_match = re.search(date_only_pattern, full_match)
+            debug(f"#Date match for remaining filename extraction: {date_match}")
             if date_match:
                 matched_date = date_match.group(0)
                 # Remove the matched date from filename
@@ -390,6 +403,7 @@ if __name__ == "__main__":
         "meeting 2024 3.txt",  # Space separator, year-month
         "data 15 3 2024.xlsx",  # Space separator, day-first
         "file_2024-3-5_test.txt",  # Mixed: dash separator, single digits
+        "Absolutorium Ani 9-10.07.2016r",
     ]
     
     for test in test_cases:
