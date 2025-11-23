@@ -11,6 +11,11 @@ except ImportError:
     print("# Exifread module not found. Please install it using 'pip install exifread'")
 
 
+def debug(msg: str):    # Simple debug print function; can be enhanced to use logging
+    # print("DEBUG:" + msg)
+    pass
+
+
 def get_exif_timestamp(path):
     # Open image file for reading (binary mode)
     try:
@@ -38,93 +43,6 @@ def _extract_timestamp_as_date(full_path: str) -> str:
     """
     timestamp = os.path.getmtime(full_path)
     return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d")
-
-
-def extract_date_from_string(text: str) -> Tuple[Optional[str], str]:
-    """
-    Extracts date from a string split by '-', '_', or space, and returns the date
-    in YYYY-MM-DD format along with the remaining text.
-
-    Args:
-        text: Input string that may contain a date
-
-    Returns:
-        Tuple of (formatted_date, remaining_text) where:
-        - formatted_date is a string in YYYY-MM-DD format or None if no date found
-        - remaining_text is the input string with date components removed
-
-    Examples:
-        >>> extract_date_from_string("report-2024-03-15-final")
-        ('2024-03-15', 'report-final')
-
-        >>> extract_date_from_string("backup_20240315_data")
-        ('2024-03-15', 'backup_data')
-    """
-    if not text:
-        return None, text
-
-    # Split by delimiters while keeping track of original structure
-    parts = re.split(r"[-_\s]+", text)
-
-    # Try to find date patterns in consecutive parts
-    date_patterns = [
-        # YYYYMMDD (compact format)
-        (r"^(\d{8})$", lambda m: _parse_compact_date(m.group(1))),
-        # YYYY MM DD or YYYY-MM-DD variants
-        (r"^(\d{4})$", None),  # Year - need to check next parts
-    ]
-
-    found_date = None
-    date_indices = []
-
-    # Scan through parts looking for date components
-    i = 0
-    while i < len(parts):
-        part = parts[i]
-
-        # Check for compact YYYYMMDD format
-        if re.match(r"^\d{8}$", part):
-            parsed = _parse_compact_date(part)
-            if parsed:
-                found_date = parsed
-                date_indices = [i]
-                break
-
-        # Check for YYYY-MM-DD pattern across consecutive parts
-        if i + 2 < len(parts):
-            year_match = re.match(r"^(\d{4})$", parts[i])
-            month_match = re.match(r"^(\d{1,2})$", parts[i + 1])
-            day_match = re.match(r"^(\d{1,2})$", parts[i + 2])
-
-            if year_match and month_match and day_match:
-                year = int(parts[i])
-                month = int(parts[i + 1])
-                day = int(parts[i + 2])
-
-                if _is_valid_date(year, month, day):
-                    found_date = f"{year:04d}-{month:02d}-{day:02d}"
-                    date_indices = [i, i + 1, i + 2]
-                    break
-
-        # Check for YYYYMM or MMDDYYYY variations
-        if re.match(r"^\d{6}$", part):
-            # Could be YYYYMM or MMDDYY
-            parsed = _try_parse_six_digit(part)
-            if parsed:
-                found_date = parsed
-                date_indices = [i]
-                break
-
-        i += 1
-
-    # Build remaining text by excluding date parts
-    if found_date:
-        remaining_parts = [parts[j] for j in range(len(parts)) if j not in date_indices]
-        remaining_text = " ".join(p for p in remaining_parts if p)
-    else:
-        remaining_text = text
-
-    return found_date, remaining_text
 
 
 def _parse_compact_date(s: str) -> Optional[str]:
@@ -206,48 +124,125 @@ def _is_valid_date_string(text: str, fmt: str = "%Y-%m-%d") -> bool:
         return False
 
 
-def extract_date_from_filename_re(filename: str) -> Tuple[str, str]:
 
-    # Regular expressions to match different date formats
-    date_patterns = [
-        re.compile(r"(\d{4}-\d{2}-\d{2})"),  # Match YYYY-MM-DD
-        re.compile(r"(\d{4}_\d{2}_\d{2})"),  # Match YYYY_MM_DD
-        re.compile(r"(\d{8})"),  # Match YYYYMMDD
-    ]
-
+def extract_date_from_filename_re(filename: str) -> Tuple[Optional[str], str]:
+    """
+    Extract date from filename in various formats.
     
-    # Search for a date in the filename
-    match = None
-    for date_pattern in date_patterns:
-        match = date_pattern.search(filename)
+    Supports:
+    - Year at beginning (YYYY-MM-DD) or end (DD-MM-YYYY)
+    - Separators: -, _, ., or none
+    - Complete dates (YYYY-MM-DD), year+month (YYYY-MM), or year only (YYYY)
+    - Validates that date is bounded by non-digits or string boundaries
+    
+    Returns:
+        Tuple of (normalized_date_str, remaining_filename)
+        Date is normalized to YYYY-MM-DD, YYYY-MM, or YYYY format
+    """
+    
+    # Pattern components
+    sep = r'[-_.\s]?'  # Optional separator (including space)
+    boundary = r'(?:^|[^\d])'  # Start or non-digit
+    boundary_end = r'(?:[^\d]|$)'  # Non-digit or end
+    
+    # Date component patterns
+    year = r'(\d{4})'
+    month = r'(\d{1,2})'  # 1 or 2 digits
+    day = r'(\d{1,2})'    # 1 or 2 digits
+    
+    # All possible date patterns with word boundaries
+    # Format: (pattern, format_type, component_order)
+    # IMPORTANT: Order matters! More specific patterns (full dates) must come before less specific (year-only)
+    date_patterns = [
+        # Full date patterns first (most specific)
+        # YYYY-MM-DD variants (year first)
+        (rf'{boundary}{year}{sep}{month}{sep}{day}{boundary_end}', 'YMD', ['year', 'month', 'day']),
+        # DD-MM-YYYY variants (year last)
+        (rf'{boundary}{day}{sep}{month}{sep}{year}{boundary_end}', 'DMY', ['day', 'month', 'year']),
+        # MM-DD-YYYY variants (year last, US format)
+        # (rf'{boundary}{month}{sep}{day}{sep}{year}{boundary_end}', 'MDY', ['month', 'day', 'year']),
+        
+        # Partial date patterns (less specific)
+        # YYYY-MM variants (year + month only)
+        (rf'{boundary}{year}{sep}{month}{boundary_end}', 'YM', ['year', 'month']),
+        # YYYY variants (year only) - least specific, must come last
+        (rf'{boundary}{year}{boundary_end}', 'Y', ['year']),
+    ]
+    
+    for pattern, format_type, components in date_patterns:
+        match = re.search(pattern, filename)
         if match:
-            break
-
-    if match:
-        date_str = match.group(1)
-
-        # Format date to YYYY-MM-DD if not already
-        if re.match(r"\d{8}", date_str):  # Convert YYYYMMDD to YYYY-MM-DD
-            date_str = datetime.strptime(date_str, "%Y%m%d").strftime("%Y-%m-%d")
-        elif re.match(
-            r"\d{4}_\d{2}_\d{2}", date_str
-        ):  # Convert YYYY_MM_DD to YYYY-MM-DD
-            date_str = date_str.replace("_", "-")
-
-        if not _is_valid_date_string(date_str):
-            return None, filename
-
-        # Create the new filename
-        remaining_str = filename.replace(
-            match.group(1), ""
-        ).strip()  # Remove matched date  # Remove trailing spaces
-
-        return date_str, remaining_str
-
+            # Extract the full matched string (including boundary context)
+            full_match = match.group(0)
+            
+            # Extract date components (groups start at 1)
+            groups = match.groups()
+            
+            # Map components to their values
+            date_parts = {}
+            group_idx = 0
+            for comp in components:
+                # Skip the boundary group (first group)
+                date_parts[comp] = groups[group_idx]
+                group_idx += 1
+            
+            # Validate date components
+            try:
+                year_val = int(date_parts['year'])
+                if year_val < 1950 or year_val > 2050:
+                    continue
+                
+                if 'month' in date_parts:
+                    month_val = int(date_parts['month'])
+                    if month_val < 1 or month_val > 12:
+                        continue
+                
+                if 'day' in date_parts:
+                    day_val = int(date_parts['day'])
+                    if day_val < 1 or day_val > 31:
+                        continue
+                    
+                    # Validate actual date exists
+                    datetime(year_val, month_val, day_val)
+                
+            except (ValueError, KeyError):
+                continue
+            
+            # Build normalized date string in YYYY-MM-DD format
+            if format_type in ['YMD', 'DMY', 'MDY']:
+                # Pad month and day with leading zeros
+                month_str = date_parts['month'].zfill(2)
+                day_str = date_parts['day'].zfill(2)
+                date_str = f"{date_parts['year']}-{month_str}-{day_str}"
+            elif format_type == 'YM':
+                month_str = date_parts['month'].zfill(2)
+                date_str = f"{date_parts['year']}-{month_str}"
+            else:  # Y
+                date_str = date_parts['year']
+            
+            # Find the actual date portion (without boundary characters)
+            # by matching just the digits and separators
+            date_only_pattern = rf'{year}{sep}{month}{sep}{day}' if 'day' in date_parts else \
+                                rf'{year}{sep}{month}' if 'month' in date_parts else \
+                                year
+            
+            date_match = re.search(date_only_pattern, full_match)
+            if date_match:
+                matched_date = date_match.group(0)
+                # Remove the matched date from filename
+                remaining = filename.replace(matched_date, '', 1).strip()
+                # Clean up any double separators or leading/trailing separators
+                remaining = re.sub(r'[-_.\s]{2,}', ' ', remaining)
+                remaining = remaining.strip('-_. ')
+                
+                return date_str, remaining
+    
     return None, filename
 
 
-def extract_date_for_path(full_path: str, verbose: bool = False, modification_time_fallback: bool = True) -> Tuple[str, str]:
+def extract_date_for_path(
+    full_path: str, verbose: bool = False, modification_time_fallback: bool = True
+) -> Tuple[str, str]:
     """
     Attempts to extract the date from the filename. If unsuccessful, extracts the date
     from the file's modification timestamp.
@@ -261,10 +256,11 @@ def extract_date_for_path(full_path: str, verbose: bool = False, modification_ti
     """
     filename = os.path.basename(full_path)
     date, suffix = None, filename
+    debug(f"#==========Extracting date for file: {full_path}==========")
 
     # Patterns like IMG_YYYYMMDD or VID_YYYYMMDD
-    if (
-        filename.upper().startswith(("IMG_", "IMG-", "VID_", "VID-", "PIX_", "PXL_"))
+    if (date is None  
+        and filename.upper().startswith(("IMG_", "IMG-", "VID_", "VID-", "PIX_", "PXL_"))
         and filename[4:12].isdigit()
     ):
         filename = filename[4:]  # Skip the prefix (e.g., IMG_)
@@ -274,51 +270,49 @@ def extract_date_for_path(full_path: str, verbose: bool = False, modification_ti
 
         # Validate the date format
         if not _is_valid_date_string(date):
-            date = _extract_timestamp_as_date(full_path)
+            date, suffix = None, filename
 
     # Files that start with 'signal-' followed by a date
-    elif filename.startswith("signal-") and _is_valid_date_string(
-        filename[7:17]
-    ):
+    if date is None and filename.startswith("signal-") and _is_valid_date_string(filename[7:17]):
         date = filename[7:17]  # Extract the date from the filename
         suffix = filename[17:]
 
     # General case where the filename starts with a date
-    elif len(filename)>=10 and _is_valid_date_string(filename[:10]):
+    if date is None and len(filename) >= 10 and _is_valid_date_string(filename[:10]):
         date = filename[:10]  # Extract the date from the first 10 characters
         suffix = filename[10:]
 
-    else:
+    if date is None:
         try:
-            # print(f"#Regex date for {full_path}: {filename}")
+            debug(f"#Regex date for: <{filename}>")
             date, suffix = extract_date_from_filename_re(filename)
         except:
             date, suffix = None, filename
-        
-        try:
-            # print(f"#Parsing date for {full_path}: {full_path}")
-            date, suffix = extract_date_from_string(full_path)
-        except:
-            date, suffix = None, filename
 
+    if date is None:
         try:
-            date_exif = get_exif_timestamp(full_path, verbose=False)
+            debug(f"#Exif date for {full_path}")
+            date_exif = get_exif_timestamp(full_path)
+
             if date_exif is not None:
                 date = datetime.fromtimestamp(date_exif).strftime("%Y-%m-%d")
                 suffix = filename
+                debug(f"# Extracted Exif date: {date} for {full_path}")
+
         except Exception as e:
-            # print(f"# Exif date extraction failed for {full_path}: {e}")
+            debug(f"# Exif date extraction failed for {full_path}: {e}")
             date, suffix = None, filename
 
-        if date is None and modification_time_fallback:
-            try:
-                # Fallback: Use file's modification time if no date can be parsed from filename
-                date = _extract_timestamp_as_date(full_path)
-                suffix = filename
-            except Exception as e:
-                if verbose:
-                    print(f"# Failed to parse {full_path} -> {filename}: {e}")
-                date, suffix = None, filename
+    if date is None and modification_time_fallback:
+        try:
+            # Fallback: Use file's modification time if no date can be parsed from filename
+            debug(f"#Using modification time for {full_path}")
+            date = _extract_timestamp_as_date(full_path)
+            suffix = filename
+        except Exception as e:
+            if verbose:
+                print(f"# Failed to parse {full_path} -> {filename}: {e}")
+            date, suffix = None, filename
 
     date = date or ""
     return date, suffix
@@ -356,7 +350,21 @@ def extract_meta(paths: List[str]) -> Dict[str, Dict[str, str]]:
 
 # Test examples
 if __name__ == "__main__":
+
     test_cases = [
+        "report_2024-03-15_final.pdf",
+        "2024_03_15_document.txt",
+        "photo.2024.03.15.jpg",
+        "20240315data.csv",
+        "data_15-03-2024.xlsx",
+        "meeting_notes_2024-03.txt",
+        "budget_2024.pdf",
+        "file_2024-13-45_invalid.txt",  # Invalid date
+        "simple_file.txt",  # No date
+        "year2024month03day15file.txt",  # Date without separators embedded
+        "2024-03-15",  # Just a date
+        "2023.06.06-Festyn-64.jpg", 
+        "prefix_2024-03_suffix.txt",  # Year-month only
         "report-2024-03-15-final",
         "backup_20240315_data",
         "file 2024 12 25 version2",
@@ -365,12 +373,26 @@ if __name__ == "__main__":
         "no_date_here",
         "meeting-2024-13-45-notes",  # Invalid date
         "data_2024_1_1_test",
+        "report_2024-03-15_final.pdf",
+        "2024_03_15_document.txt",
+        "photo.2024.03.15.jpg",
+        "20240315data.csv",
+        "data_15-03-2024.xlsx",
+        "meeting_notes_2024-03.txt",
+        "budget_2024.pdf",
+        "file_2024-13-45_invalid.txt",  # Invalid date
+        "simple_file.txt",  # No date
+        "year2024month03day15file.txt",  # Date without separators embedded
+        "2024-03-15",  # Just a date
+        "prefix_2024-03_suffix.txt",  # Year-month only
+        "report 2024 3 15 final.pdf",  # Space separator with single digits
+        "photo_2024_3_5.jpg",  # Single digit month and day
+        "meeting 2024 3.txt",  # Space separator, year-month
+        "data 15 3 2024.xlsx",  # Space separator, day-first
+        "file_2024-3-5_test.txt",  # Mixed: dash separator, single digits
     ]
-
-    print("Testing date extraction:\n")
+    
     for test in test_cases:
-        date, remaining = extract_date_from_string(test)
-        print(f"Input:     '{test}'")
-        print(f"Date:      {date}")
-        print(f"Remaining: '{remaining}'")
-        print()
+        date, remaining = extract_date_from_filename_re(test)
+        print(f"Input: {test} | Date: {date} | Remaining: {remaining}")
+
