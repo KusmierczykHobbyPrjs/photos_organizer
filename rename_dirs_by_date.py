@@ -32,10 +32,10 @@ def parse_args() -> argparse.Namespace:
     )
     # Support drag-and-drop file input
     parser.add_argument(
-        'dropped_files', 
-        nargs='*',      # Accepts zero or more files
-        default=[],     # Default to empty list
-        help='List of files (drag and drop)'
+        "dropped_files",
+        nargs="*",  # Accepts zero or more files
+        default=[],  # Default to empty list
+        help="List of files (drag and drop)",
     )
 
     parser.add_argument(
@@ -155,19 +155,21 @@ def extract_date_for_directory(
         verbose: Whether to print verbose output
         quantiles: List of quantile values (e.g., [0.25, 0.5, 0.75] for quartiles)
     """
+    directory_base = os.path.basename(directory_path)
     date_str, dir_name = file_date.extract_date_for_path(
-        directory_path, verbose=verbose, modification_time_fallback=False
+        directory_base, verbose=verbose, modification_time_fallback=False
     )
-    dir_name = dir_name.strip(" ")
+    dir_name = dir_name.strip(" -_")
+
+    if date_str is not None and len(date_str) > 0:
+        print(f"#Directory: {directory_base}. Extracted date from name: {date_str}")
+        return date_str, dir_name
 
     quantiles = compute_directory_date_quantiles(directory_path, quantiles)
     q_str = ", ".join([f" {q}: {date_str}" for q, date_str in quantiles.items()])
     if verbose:
         print(f"#Directory: {directory_path}. Date quantiles: {q_str}")
     quantiles = sorted(quantiles.values())
-
-    if date_str is not None:
-        return date_str, dir_name
 
     if quantiles[0] == quantiles[2]:
         return quantiles[1], dir_name  # All quantiles are the same, use the median
@@ -178,7 +180,7 @@ def extract_date_for_directory(
 if __name__ == "__main__":
     args = parse_args()
 
-    paths = match_paths(args.files, recursive=True, verbose=False)
+    paths = match_paths(args.files, recursive=False, verbose=False)
 
     # Keep only directories
     paths = [p for p in paths if os.path.isdir(p)]
@@ -188,11 +190,13 @@ if __name__ == "__main__":
         exit(1)
 
     for dir_path in paths:
+        if args.verbose:
+            print(f"\n\n# Processing directory: {dir_path}")
         try:
+            parent_dir = os.path.dirname(dir_path)
             date_str, dir_name = extract_date_for_directory(
                 dir_path, args.verbose, args.quantiles
             )
-            parent_dir = os.path.dirname(dir_path)
             new_dir_name = f"{date_str} {dir_name}".strip()
             new_dir_path = os.path.join(parent_dir, new_dir_name)
 
