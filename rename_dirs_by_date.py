@@ -79,8 +79,9 @@ def parse_args() -> argparse.Namespace:
         "--quantiles",
         type=float,
         nargs="+",
-        default=[0.05, 0.5, 0.95],
-        help="List of date quantiles (ranges) for each directory to consider (between 0 and 1). Default: [0.05, 0.5, 0.95]",
+        default=[0.01, 0.5, 0.99],
+        help="List of date quantiles (ranges) for each directory to consider (between 0 and 1). "
+        "Default: [0.01, 0.5, 0.99]",
     )
     parser.add_argument(
         "-v",
@@ -341,7 +342,7 @@ def extract_date_for_directory(
 
     quantiles = compute_directory_date_quantiles(
         directory_path,
-        quantiles,
+        date_quantiles=quantiles,
         file_search_recursive=file_search_recursive,
         file_patterns=file_patterns,
     )
