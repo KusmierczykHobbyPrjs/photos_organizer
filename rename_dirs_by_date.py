@@ -50,9 +50,18 @@ def parse_args() -> argparse.Namespace:
         "-x",
         "--remove_date",
         action="store_true",
-        default=False
+        default=False,
         required=False,
         help="Remove date from the original dir name.",
+    )
+    parser.add_argument(
+        "-s",
+        "--span_days",
+        type=int,
+        default=5,
+        required=False,
+        help="Directories spanning over some number of days (default: 5), "
+        "are marked as a range: start_date - end_date."
     )
     parser.add_argument(
         "-v",
@@ -154,6 +163,7 @@ def extract_date_for_directory(
     directory_path: str,
     verbose: bool = False,
     quantiles: List[float] = [0.05, 0.5, 0.95],
+    min_number_of_days: int = 5,
 ) -> str:
     """
     Extracts the date for a directory based on its name.
@@ -181,12 +191,18 @@ def extract_date_for_directory(
 
     if quantiles[0] == quantiles[2]:
         return quantiles[1], dir_name  # All quantiles are the same, use the median
+    
+    # Short range
+    number_of_days = (datetime.strptime(quantiles[2], "%Y-%m-%d") - datetime.strptime(quantiles[0], "%Y-%m-%d")).days
+    if number_of_days < min_number_of_days:
+        return quantiles[0], dir_name
 
     return f"{quantiles[0]} - {quantiles[2]}", dir_name
 
 
 if __name__ == "__main__":
     args = parse_args()
+    print(f"# args = {args}")
 
     paths = match_paths(args.files, recursive=False, verbose=False)
 
@@ -203,7 +219,7 @@ if __name__ == "__main__":
         try:
             parent_dir = os.path.dirname(dir_path)
             date_str, dir_name = extract_date_for_directory(
-                dir_path, args.verbose, args.quantiles
+                dir_path, args.verbose, args.quantiles, args.span_days,
             )
             if not args.remove_date:
                 dir_name = os.path.basename(dir_path)
