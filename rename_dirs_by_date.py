@@ -164,6 +164,7 @@ def extract_date_for_directory(
     verbose: bool = False,
     quantiles: List[float] = [0.05, 0.5, 0.95],
     min_number_of_days: int = 5,
+    min_name_date_length: int = 7
 ) -> str:
     """
     Extracts the date for a directory based on its name.
@@ -179,7 +180,7 @@ def extract_date_for_directory(
     )
     dir_name = dir_name.strip(" -_")
 
-    if date_str is not None and len(date_str) > 0:
+    if date_str is not None and len(date_str) >= min_name_date_length:  
         print(f"#Directory: {directory_base}. Extracted date from name: {date_str}")
         return date_str, dir_name
 
