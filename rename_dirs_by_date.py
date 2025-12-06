@@ -47,6 +47,14 @@ def parse_args() -> argparse.Namespace:
         help="List of date quantiles (ranges) for each directory to consider (between 0 and 1). Default: [0.05, 0.5, 0.95]",
     )
     parser.add_argument(
+        "-x",
+        "--remove_date",
+        action="store_true",
+        default=False
+        required=False,
+        help="Remove date from the original dir name.",
+    )
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -197,6 +205,8 @@ if __name__ == "__main__":
             date_str, dir_name = extract_date_for_directory(
                 dir_path, args.verbose, args.quantiles
             )
+            if not args.remove_date:
+                dir_name = os.path.basename(dir_path)
             new_dir_name = f"{date_str} {dir_name}".strip()
             new_dir_path = os.path.join(parent_dir, new_dir_name)
 
