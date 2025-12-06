@@ -16,7 +16,13 @@ def debug(msg: str):    # Simple debug print function; can be enhanced to use lo
     pass
 
 
+EXIF_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "tif", "tiff"]
+
 def get_exif_timestamp(path):
+    # Check if correct extension
+    if not any(path.lower().endswith(ext) for ext in EXIF_EXTENSIONS):
+        return None
+
     # Open image file for reading (binary mode)
     try:
         f = open(path, "rb")
