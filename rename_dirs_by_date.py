@@ -207,7 +207,7 @@ def list_files(
 
 
 MEDIA_FILES = [
-    "*.jpg",
+    "*.jpg", 
     "*.jpeg",
     "*.webp",
     "*.png",
@@ -220,6 +220,7 @@ MEDIA_FILES = [
     "*.webm",
     "*.mpeg",
 ]
+MEDIA_FILES += [f.upper() for f in MEDIA_FILES]  # Support capitalized file extensions
 
 
 def compute_directory_date_quantiles(
