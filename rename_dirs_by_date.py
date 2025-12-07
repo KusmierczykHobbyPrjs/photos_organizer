@@ -214,7 +214,7 @@ def compute_directory_date_quantiles(
                 dates.append(date_obj)
             except Exception as e:
                 # Skip files that don't have valid dates
-                print(f"Warning: Could not extract date from {filename}: {e}")
+                print(f"# Warning: Could not extract date from {filename}: {e}")
                 continue
 
     if not dates:
