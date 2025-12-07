@@ -8,8 +8,6 @@ from glob import glob
 from pathlib import Path
 import re
 
-from path_matcher import match_paths
-
 
 def parse_args() -> argparse.Namespace:
     """
@@ -208,7 +206,7 @@ def list_files(
 
 
 MEDIA_FILES = [
-    "*.jpg", 
+    "*.jpg",
     "*.jpeg",
     "*.webp",
     "*.png",
@@ -365,12 +363,32 @@ def extract_date_for_directory(
     return f"{quantiles[0]} - {quantiles[2]}", dir_name
 
 
+def match_dirs(patterns, sort=True):
+    dir_paths = []
+    if len(patterns) == 1 and os.path.isdir(patterns[0]):
+        patterns = [os.path.join(patterns[0], "*")]
+
+    for pattern in patterns:
+        matches = glob(pattern, recursive=False)
+        if matches:
+            dir_paths.extend(matches)
+        else:
+            # If glob returns nothing, the pattern might be a literal filename
+            dir_paths.append(pattern)
+
+    if sort:
+        # Modify first the longest paths to avoid conflicts
+        dir_paths = sorted(dir_paths, key=lambda x: -len(x))
+
+    return dir_paths
+
+
 if __name__ == "__main__":
     args = parse_args()
     if args.verbose:
         print(f"# Script args = {args}")
 
-    paths = match_paths(args.files, recursive=False, verbose=False)
+    paths = match_dirs(args.files)
 
     # Keep only directories
     paths = [p for p in paths if os.path.isdir(p)]
