@@ -1,12 +1,13 @@
 import os
 from datetime import datetime
 from tabnanny import verbose
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict
 import file_date
 import argparse
 from glob import glob
 from pathlib import Path
-import re
+
+from file_date import extract_dates_range
 
 
 def parse_args() -> argparse.Namespace:
@@ -95,56 +96,6 @@ def parse_args() -> argparse.Namespace:
     args.files = list(set(args.files + args.dropped_files))
 
     return args
-
-
-def check_date_pattern(text: str) -> Tuple[Optional[str], str]:
-    """
-    Check if a string starts with date pattern(s) and extract them.
-
-    Patterns checked (in order):
-    1. "YYYY-MM-DD - YYYY-MM-DD" (date range)
-    2. "YYYY-MM-DD" (single date)
-
-    Args:
-        text: The string to check
-
-    Returns:
-        Tuple of (matched_part, remaining_part)
-        - If no match: (None, original_string)
-        - If match: (matched_date_string, remaining_string)
-
-    Examples:
-        >>> check_date_pattern("2024-01-15 - 2024-01-20 Meeting notes")
-        ('2024-01-15 - 2024-01-20', ' Meeting notes')
-
-        >>> check_date_pattern("2024-01-15 Task description")
-        ('2024-01-15', ' Task description')
-
-        >>> check_date_pattern("No date here")
-        (None, 'No date here')
-    """
-    # Pattern for date range: YYYY-MM-DD - YYYY-MM-DD
-    date_range_pattern = r"^(\d{4}-\d{2}-\d{2}\s*-\s*\d{4}-\d{2}-\d{2})"
-
-    # Pattern for single date: YYYY-MM-DD
-    single_date_pattern = r"^(\d{4}-\d{2}-\d{2})"
-
-    # Try date range pattern first
-    match = re.match(date_range_pattern, text)
-    if match:
-        matched_part = match.group(1)
-        remaining_part = text[len(matched_part) :]
-        return (matched_part, remaining_part)
-
-    # Try single date pattern
-    match = re.match(single_date_pattern, text)
-    if match:
-        matched_part = match.group(1)
-        remaining_part = text[len(matched_part) :]
-        return (matched_part, remaining_part)
-
-    # No match found
-    return (None, text)
 
 
 def list_files(
@@ -326,7 +277,7 @@ def extract_date_for_directory(
     """
     directory_base = os.path.basename(directory_path)
 
-    date_str, dir_name = check_date_pattern(directory_base)
+    date_str, dir_name = extract_dates_range(directory_base)
     if date_str is None:
         date_str, dir_name = file_date.extract_date_for_path(
             directory_base, verbose=verbose, modification_time_fallback=False

@@ -16,6 +16,57 @@ def debug(msg: str):    # Simple debug print function; can be enhanced to use lo
     pass
 
 
+
+def extract_dates_range(text: str) -> Tuple[Optional[str], str]:
+    """
+    Check if a string starts with date pattern(s) and extract them.
+
+    Patterns checked (in order):
+    1. "YYYY-MM-DD - YYYY-MM-DD" (date range)
+    2. "YYYY-MM-DD" (single date)
+
+    Args:
+        text: The string to check
+
+    Returns:
+        Tuple of (matched_part, remaining_part)
+        - If no match: (None, original_string)
+        - If match: (matched_date_string, remaining_string)
+
+    Examples:
+        >>> check_date_pattern("2024-01-15 - 2024-01-20 Meeting notes")
+        ('2024-01-15 - 2024-01-20', ' Meeting notes')
+
+        >>> check_date_pattern("2024-01-15 Task description")
+        ('2024-01-15', ' Task description')
+
+        >>> check_date_pattern("No date here")
+        (None, 'No date here')
+    """
+    # Pattern for date range: YYYY-MM-DD - YYYY-MM-DD
+    date_range_pattern = r"^(\d{4}-\d{2}-\d{2}\s*-\s*\d{4}-\d{2}-\d{2})"
+
+    # Pattern for single date: YYYY-MM-DD
+    single_date_pattern = r"^(\d{4}-\d{2}-\d{2})"
+
+    # Try date range pattern first
+    match = re.match(date_range_pattern, text)
+    if match:
+        matched_part = match.group(1)
+        remaining_part = text[len(matched_part) :]
+        return (matched_part, remaining_part)
+
+    # Try single date pattern
+    match = re.match(single_date_pattern, text)
+    if match:
+        matched_part = match.group(1)
+        remaining_part = text[len(matched_part) :]
+        return (matched_part, remaining_part)
+
+    # No match found
+    return (None, text)
+
+
 EXIF_EXTENSIONS = ["jpg", "jpeg", "png", "webp", "tif", "tiff"]
 
 def get_exif_timestamp(path):
