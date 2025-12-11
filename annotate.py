@@ -27,6 +27,9 @@ def process_image(
     text_divisor=30,
     rename_prefix=None,
     resize_config=None,
+    date_precision:int = 2,
+    date_separator:str = "-",
+    margin:int = 2,
 ):
     """
     Generate ImageMagick commands for a single image.
@@ -84,6 +87,8 @@ def process_image(
         try:
             date, _ = file_date.extract_date_for_path(str(filepath))
             if date:
+                date = date.split("-")[:(date_precision+1)]
+                date = date_separator.join(date)
                 annotations.append(date)
         except Exception:
             print(f"#WARNING: Could not extract date from {filepath}")
@@ -93,7 +98,7 @@ def process_image(
 
     # Generate annotation command
     if annotations:
-        full_annotation = " ".join(annotations)
+        full_annotation = " ".join(annotations) + (" "*margin)
         print(
             f"convert '{filepath}' -gravity {gravity} -pointsize {pointsize} "
             f"-fill yellow -annotate 0 \"{full_annotation}\" '{filepath}'"
@@ -151,6 +156,9 @@ def main():
                 gravity=args.gravity,
                 text_divisor=args.text_size,
                 resize_config=resize_config,
+                date_precision=args.precision,
+                date_separator=args.separator,
+                margin=args.margin,
             )
         except Exception as e:
             print(f"#ERROR processing {filepath}: {e}")
@@ -225,6 +233,27 @@ def parse_args():
     )
 
     parser.add_argument(
+        "-p",
+        "--precision",
+        type=int,
+        default=2,
+        required=False,
+        choices=[0, 1, 2],
+        help="Date precision (default: 2 = days, 1 = months, 0=years)",
+    )
+
+    parser.add_argument(
+        "-s",
+        "--separator",
+        type=str,
+        default="-",
+        required=False,
+        choices=["-", ".", "/"],
+        help="Separator used in dates"
+    )
+
+
+    parser.add_argument(
         "--text-size",
         type=int,
         default=30,
@@ -266,6 +295,15 @@ def parse_args():
         help="JPEG quality for resized images, 0-100 (default: 85)",
     )
 
+    parser.add_argument(
+        "-m",
+        "--margin",
+        type=int,
+        default=2,
+        required=False,
+        help="Margin in whitespaces (default: 2)",
+    )
+
     args = parser.parse_args()
 
     if not args.date and not args.dirname:
@@ -273,6 +311,7 @@ def parse_args():
     
     args.files = list(set(args.files + args.dropped_files))
 
+    print(f"# args = {args}")
     return args
 
 
