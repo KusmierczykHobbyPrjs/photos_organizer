@@ -246,7 +246,7 @@ def parse_args():
         "-s",
         "--separator",
         type=str,
-        default="-",
+        default="/",
         required=False,
         choices=["-", ".", "/"],
         help="Separator used in dates"
