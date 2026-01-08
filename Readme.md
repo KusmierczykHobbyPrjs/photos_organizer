@@ -75,6 +75,8 @@ Run the script using the following command:
 
 ```python rename_dirs_by_date.py -f "paths_to_be_searched" ```
 
+# TODO
+A script that clips the photos to the standard proportions such as 15x10 or 13x8. 
 
 --------------------------------------------------
 ## [annotate.py](annotate.py): Stamps images with dates and captions
